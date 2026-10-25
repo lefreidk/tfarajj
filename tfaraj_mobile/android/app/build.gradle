@@ -56,67 +56,39 @@ android {
 
     signingConfigs {
         release {
-            def ksPathRaw = System.getenv("CM_KEYSTORE_PATH")
-            def ksPassRaw = System.getenv("CM_KEYSTORE_PASSWORD")
-            def ksAliasRaw = System.getenv("CM_KEY_ALIAS")
-            def ksKeyPassRaw = System.getenv("CM_KEY_PASSWORD")
+            def ksPath = System.getenv("CM_KEYSTORE_PATH")
+            def ksPass = System.getenv("CM_KEYSTORE_PASSWORD")
+            def ksAlias = System.getenv("CM_KEY_ALIAS")
+            def ksKeyPass = System.getenv("CM_KEY_PASSWORD")
 
-            if (ksPathRaw != null && !ksPathRaw.trim().isEmpty() &&
-                ksPassRaw != null && !ksPassRaw.trim().isEmpty() &&
-                ksAliasRaw != null && !ksAliasRaw.trim().isEmpty() &&
-                ksKeyPassRaw != null && !ksKeyPassRaw.trim().isEmpty()) {
-                def f = file(ksPathRaw.trim())
-                if (f.exists()) {
-                    storeFile f
-                    storePassword ksPassRaw
-                    keyAlias ksAliasRaw
-                    keyPassword ksKeyPassRaw
-                }
+            if (ksPath != null && !ksPath.trim().isEmpty() && file(ksPath).exists() &&
+                ksPass != null && !ksPass.trim().isEmpty() &&
+                ksAlias != null && !ksAlias.trim().isEmpty() &&
+                ksKeyPass != null && !ksKeyPass.trim().isEmpty()) {
+                storeFile file(ksPath)
+                storePassword ksPass
+                keyAlias ksAlias
+                keyPassword ksKeyPass
             }
         }
     }
 
     buildTypes {
         release {
-            def ciEnv = System.getenv("CI")?.trim()
-            def cmDir = System.getenv("CM_BUILD_DIR")?.trim()
-            boolean isCI = (cmDir != null && !cmDir.isEmpty()) ||
-                           (ciEnv != null && !ciEnv.isEmpty() && !ciEnv.equalsIgnoreCase("false") && !ciEnv.equals("0"))
+            if (System.getenv("CI") != null || System.getenv("CM_BUILD_DIR") != null) {
+                def ksPath = System.getenv("CM_KEYSTORE_PATH")
+                def ksPass = System.getenv("CM_KEYSTORE_PASSWORD")
+                def ksAlias = System.getenv("CM_KEY_ALIAS")
+                def ksKeyPass = System.getenv("CM_KEY_PASSWORD")
 
-            if (isCI) {
-                def ksPathRaw = System.getenv("CM_KEYSTORE_PATH")
-                def ksPassRaw = System.getenv("CM_KEYSTORE_PASSWORD")
-                def ksAliasRaw = System.getenv("CM_KEY_ALIAS")
-                def ksKeyPassRaw = System.getenv("CM_KEY_PASSWORD")
+                def isInvalid = !ksPath?.trim() || !file(ksPath).exists() ||
+                                !ksPass?.trim() ||
+                                !ksAlias?.trim() ||
+                                !ksKeyPass?.trim()
 
-                if (!ksPathRaw?.trim() || !ksPassRaw?.trim() || !ksAliasRaw?.trim() || !ksKeyPassRaw?.trim()) {
-                    throw new GradleException("ERROR: Release build failed in CI. One or more signing variables (CM_KEYSTORE_PATH, CM_KEYSTORE_PASSWORD, CM_KEY_ALIAS, CM_KEY_PASSWORD) are missing or empty.")
+                if (isInvalid) {
+                    throw new GradleException("ERROR: Release build failed in CI. Missing, empty, or whitespace-only Codemagic signing variables (CM_KEYSTORE_PATH, CM_KEYSTORE_PASSWORD, CM_KEY_ALIAS, CM_KEY_PASSWORD), or the keystore file does not exist at the specified path.")
                 }
-
-                def ksFile = file(ksPathRaw.trim())
-                if (!ksFile.exists()) {
-                    throw new GradleException("ERROR: Release build failed in CI. Keystore file does not exist at specified path.")
-                }
-
-                try {
-                    def ks = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType())
-                    ksFile.withInputStream { is -> ks.load(is, ksPassRaw.toCharArray()) }
-                    if (!ks.containsAlias(ksAliasRaw)) {
-                        throw new GradleException("ERROR: Release build failed in CI. Key alias is not present in keystore.")
-                    }
-                    if (!ks.isKeyEntry(ksAliasRaw)) {
-                        throw new GradleException("ERROR: Release build failed in CI. Alias does not reference a valid private key entry.")
-                    }
-                    def key = ks.getKey(ksAliasRaw, ksKeyPassRaw.toCharArray())
-                    if (key == null || !(key instanceof java.security.PrivateKey)) {
-                        throw new GradleException("ERROR: Release build failed in CI. Could not retrieve a valid private key for the specified alias.")
-                    }
-                } catch (GradleException ge) {
-                    throw ge
-                } catch (Exception e) {
-                    throw new GradleException("ERROR: Release build failed in CI. Keystore validation failed. Ensure keystore password, key password, and alias are correct.")
-                }
-
                 signingConfig signingConfigs.release
             } else {
                 signingConfig signingConfigs.debug

@@ -94,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 hintText: 'ابحث عن فيلم أو مسلسل...',
                 prefixIcon: const Icon(Icons.search, color: Colors.white54),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.08),
+                fillColor: Colors.white.withValues(alpha: 0.08),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -117,13 +117,13 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppTheme.primaryColor,
         selectedItemColor: AppTheme.accentColor,
         unselectedItemColor: Colors.white54,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Icon(Icons.movie), label: 'أفلام'),
-          BottomNavigationBarItem(icon: Icon(Icons.tv), label: 'مسلسلات'),
-          BottomNavigationBarItem(icon: Icon(Icons.dragon), label: 'أنمي'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'المفضلة'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
+        items: [
+          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'الرئيسية'),
+          const BottomNavigationBarItem(icon: Icon(Icons.movie), label: 'أفلام'),
+          const BottomNavigationBarItem(icon: Icon(Icons.tv), label: 'مسلسلات'),
+          const BottomNavigationBarItem(icon: Icon(Icons.animation), label: 'أنمي'),
+          const BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'المفضلة'),
+          const BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'الإعدادات'),
         ],
       ),
     );

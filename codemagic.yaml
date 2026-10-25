@@ -1,128 +1,11 @@
-
 workflows:
-  android-debug:
-    name: TFARAJ Android Debug APK
-    max_build_duration: 60
-
-    environment:
-      flutter: stable
-
-    scripts:
-      - name: Verify Gradle Wrapper Files
-        script: |
-          set -euo pipefail
-          cd "$CM_BUILD_DIR/tfaraj_mobile/android"
-
-          REQUIRED_FILES=(
-            "gradlew"
-            "gradlew.bat"
-            "gradle/wrapper/gradle-wrapper.jar"
-            "gradle/wrapper/gradle-wrapper.properties"
-          )
-
-          for f in "${REQUIRED_FILES[@]}"; do
-            if [ ! -f "$f" ]; then
-              echo "ERROR: Missing Gradle wrapper file: $f"
-              exit 1
-            fi
-          done
-
-          chmod +x gradlew
-          echo "SUCCESS: Gradle wrapper files exist."
-
-      - name: Validate Optional Firebase Configuration
-        script: |
-          set -euo pipefail
-
-          if [ -z "${GOOGLE_SERVICES_JSON:-}" ]; then
-            echo "INFO: GOOGLE_SERVICES_JSON is not configured."
-            echo "Firebase-dependent features may not work."
-            exit 0
-          fi
-
-          TARGET_JSON_PATH="$CM_BUILD_DIR/tfaraj_mobile/android/app/google-services.json"
-          export TARGET_JSON_PATH
-          mkdir -p "$(dirname "$TARGET_JSON_PATH")"
-
-          if ! printf "%s" "$GOOGLE_SERVICES_JSON" \
-            | base64 --decode > "$TARGET_JSON_PATH" 2>/dev/null; then
-            echo "ERROR: GOOGLE_SERVICES_JSON is not valid Base64."
-            exit 1
-          fi
-
-          python3 - << 'PY'
-          import json
-          import os
-          import sys
-
-          path = os.environ["TARGET_JSON_PATH"]
-
-          try:
-              with open(path, encoding="utf-8") as f:
-                  data = json.load(f)
-          except Exception:
-              print("ERROR: Invalid google-services.json.")
-              sys.exit(1)
-
-          clients = data.get("client", [])
-          matched = any(
-              c.get("client_info", {})
-               .get("android_client_info", {})
-               .get("package_name") == "com.tfaraj.app"
-              for c in clients if isinstance(c, dict)
-          )
-
-          if not matched:
-              print("ERROR: Package com.tfaraj.app was not found.")
-              sys.exit(1)
-
-          print("SUCCESS: Firebase package configuration validated.")
-          PY
-
-      - name: Get Flutter Dependencies
-        script: |
-          set -euo pipefail
-          cd "$CM_BUILD_DIR/tfaraj_mobile"
-          flutter pub get
-
-      - name: Analyze Flutter Code
-        script: |
-          set -euo pipefail
-          cd "$CM_BUILD_DIR/tfaraj_mobile"
-          flutter analyze
-
-      - name: Run Flutter Tests
-        script: |
-          set -euo pipefail
-          cd "$CM_BUILD_DIR/tfaraj_mobile"
-          flutter test
-
-      - name: Build Debug APK
-        script: |
-          set -euo pipefail
-          cd "$CM_BUILD_DIR/tfaraj_mobile"
-          flutter build apk --debug
-
-    artifacts:
-      - tfaraj_mobile/build/app/outputs/flutter-apk/app-debug.apk
-
-    publishing:
-      email:
-        recipients:
-          - lefreidk@gmail.com
-        notify:
-          success: true
-          failure: true
-
   android-release:
     name: TFARAJ Production Release
     max_build_duration: 60
-
     environment:
       flutter: stable
       android_signing:
         - tfaraj_keystore
-
     scripts:
       - name: Verify Gradle Wrapper Files
         script: |
@@ -207,7 +90,6 @@ workflows:
 
     artifacts:
       - tfaraj_mobile/build/app/outputs/bundle/release/app-release.aab
-
     publishing:
       email:
         recipients:

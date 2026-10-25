@@ -60,40 +60,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          SwitchListTile(
-            title: const Text('الوضع الداكن'),
-            activeColor: AppTheme.accentColor,
-            value: _isDarkMode,
-            onChanged: _toggleTheme,
-          ),
-          const Divider(),
-          SwitchListTile(
-            title: const Text('مانع الإعلانات والنوافذ المنبثقة'),
-            activeColor: AppTheme.accentColor,
-            value: _isAdBlock,
-            onChanged: _toggleAdBlock,
-          ),
-          const Divider(),
-          ListTile(
-            title: const Text('لغة التطبيق'),
-            trailing: DropdownButton<String>(
-              dropdownColor: Colors.grey[900],
-              value: _currentLang,
-              items: const [
-                DropdownMenuItem(value: 'ar', child: Text('🇸🇦 العربية')),
-                DropdownMenuItem(value: 'en', child: Text('🇬🇧 English')),
-              ],
-              onChanged: _changeLanguage,
+            SwitchListTile(
+              title: const Text('الوضع الداكن'),
+              activeThumbColor: AppTheme.accentColor,
+              value: _isDarkMode,
+              onChanged: _toggleTheme,
             ),
-          ),
-          const Divider(),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
+            const Divider(),
+            SwitchListTile(
+              title: const Text('مانع الإعلانات والنوافذ المنبثقة'),
+              activeThumbColor: AppTheme.accentColor,
+              value: _isAdBlock,
+              onChanged: _toggleAdBlock,
             ),
+            const Divider(),
+            ListTile(
+              title: const Text('لغة التطبيق'),
+              trailing: DropdownButton<String>(
+                dropdownColor: Colors.grey[900],
+                value: _currentLang,
+                items: const [
+                  DropdownMenuItem(value: 'ar', child: Text('🇸🇦 العربية')),
+                  DropdownMenuItem(value: 'en', child: Text('🇬🇧 English')),
+                ],
+                onChanged: _changeLanguage,
+              ),
+            ),
+            const Divider(),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+              ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
