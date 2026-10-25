@@ -1,0 +1,99 @@
+workflows:
+  android-release:
+    name: TFARAJ Production Release
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      android_signing:
+        - tfaraj_keystore
+    scripts:
+      - name: Verify Gradle Wrapper Files
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/tfaraj_mobile/android"
+
+          REQUIRED_FILES=("gradlew" "gradlew.bat" "gradle/wrapper/gradle-wrapper.jar" "gradle/wrapper/gradle-wrapper.properties")
+          for f in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "ERROR: Required Gradle wrapper file missing: $f"
+              exit 1
+            fi
+          done
+
+          EXPECTED_JAR_SHA="91a239400bb638f36a1795d8fdf7939d532cdc7d794d1119b7261aac158b1e60"
+          ACTUAL_JAR_SHA=$(sha256sum gradle/wrapper/gradle-wrapper.jar | cut -d' ' -f1)
+
+          if [ "$ACTUAL_JAR_SHA" != "$EXPECTED_JAR_SHA" ]; then
+            echo "ERROR: gradle-wrapper.jar SHA-256 checksum mismatch."
+            exit 1
+          fi
+
+          chmod +x gradlew
+          echo "SUCCESS: All Gradle wrapper files verified."
+
+      - name: Inject and Validate Firebase Configuration
+        script: |
+          set -euo pipefail
+          if [ -z "${GOOGLE_SERVICES_JSON:-}" ] || [ -z "$(echo "${GOOGLE_SERVICES_JSON}" | tr -d '[:space:]')" ]; then
+            echo "ERROR: GOOGLE_SERVICES_JSON environment variable is missing or empty."
+            exit 1
+          fi
+
+          export TARGET_JSON_PATH="$CM_BUILD_DIR/tfaraj_mobile/android/app/google-services.json"
+          mkdir -p "$(dirname "$TARGET_JSON_PATH")"
+
+          if ! printf "%s" "$GOOGLE_SERVICES_JSON" | base64 --decode > "$TARGET_JSON_PATH" 2>/dev/null; then
+            echo "ERROR: Failed to decode GOOGLE_SERVICES_JSON from Base64."
+            exit 1
+          fi
+
+          python3 - << 'EOF'
+          import json
+          import os
+          import sys
+
+          path = os.environ.get("TARGET_JSON_PATH")
+          if not path or not os.path.exists(path):
+              print("ERROR: Target google-services.json file does not exist.")
+              sys.exit(1)
+
+          try:
+              with open(path, 'r', encoding='utf-8') as f:
+                  data = json.load(f)
+          except Exception:
+              print("ERROR: Decoded google-services.json is not valid JSON.")
+              sys.exit(1)
+
+          clients = data.get('client', [])
+          if not isinstance(clients, list) or len(clients) == 0:
+              print("ERROR: google-services.json contains no client configurations.")
+              sys.exit(1)
+
+          matched = any(
+              c.get('client_info', {}).get('android_client_info', {}).get('package_name') == 'com.tfaraj.app'
+              for c in clients if isinstance(c, dict)
+          )
+
+          if not matched:
+              print("ERROR: Package name 'com.tfaraj.app' not found in google-services.json client configurations.")
+              sys.exit(1)
+
+          print("SUCCESS: Firebase configuration validated for com.tfaraj.app.")
+          EOF
+
+      - name: Build Production AAB
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/tfaraj_mobile"
+          flutter pub get
+          flutter build appbundle --release
+
+    artifacts:
+      - tfaraj_mobile/build/app/outputs/bundle/release/app-release.aab
+    publishing:
+      email:
+        recipients:
+          - lefreidk@gmail.com
+        notify:
+          success: true
+          failure: true

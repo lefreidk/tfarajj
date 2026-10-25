@@ -1,0 +1,134 @@
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+apply plugin: 'com.google.gms.google-services'
+
+android {
+    namespace "com.tfaraj.app"
+    compileSdkVersion flutter.compileSdkVersion
+    ndkVersion flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    defaultConfig {
+        applicationId "com.tfaraj.app"
+        minSdkVersion 21
+        targetSdkVersion flutter.targetSdkVersion
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        release {
+            def ksPathRaw = System.getenv("CM_KEYSTORE_PATH")
+            def ksPassRaw = System.getenv("CM_KEYSTORE_PASSWORD")
+            def ksAliasRaw = System.getenv("CM_KEY_ALIAS")
+            def ksKeyPassRaw = System.getenv("CM_KEY_PASSWORD")
+
+            if (ksPathRaw != null && !ksPathRaw.trim().isEmpty() &&
+                ksPassRaw != null && !ksPassRaw.trim().isEmpty() &&
+                ksAliasRaw != null && !ksAliasRaw.trim().isEmpty() &&
+                ksKeyPassRaw != null && !ksKeyPassRaw.trim().isEmpty()) {
+                def f = file(ksPathRaw.trim())
+                if (f.exists()) {
+                    storeFile f
+                    storePassword ksPassRaw
+                    keyAlias ksAliasRaw
+                    keyPassword ksKeyPassRaw
+                }
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            def ciEnv = System.getenv("CI")?.trim()
+            def cmDir = System.getenv("CM_BUILD_DIR")?.trim()
+            boolean isCI = (cmDir != null && !cmDir.isEmpty()) ||
+                           (ciEnv != null && !ciEnv.isEmpty() && !ciEnv.equalsIgnoreCase("false") && !ciEnv.equals("0"))
+
+            if (isCI) {
+                def ksPathRaw = System.getenv("CM_KEYSTORE_PATH")
+                def ksPassRaw = System.getenv("CM_KEYSTORE_PASSWORD")
+                def ksAliasRaw = System.getenv("CM_KEY_ALIAS")
+                def ksKeyPassRaw = System.getenv("CM_KEY_PASSWORD")
+
+                if (!ksPathRaw?.trim() || !ksPassRaw?.trim() || !ksAliasRaw?.trim() || !ksKeyPassRaw?.trim()) {
+                    throw new GradleException("ERROR: Release build failed in CI. One or more signing variables (CM_KEYSTORE_PATH, CM_KEYSTORE_PASSWORD, CM_KEY_ALIAS, CM_KEY_PASSWORD) are missing or empty.")
+                }
+
+                def ksFile = file(ksPathRaw.trim())
+                if (!ksFile.exists()) {
+                    throw new GradleException("ERROR: Release build failed in CI. Keystore file does not exist at specified path.")
+                }
+
+                try {
+                    def ks = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType())
+                    ksFile.withInputStream { is -> ks.load(is, ksPassRaw.toCharArray()) }
+                    if (!ks.containsAlias(ksAliasRaw)) {
+                        throw new GradleException("ERROR: Release build failed in CI. Key alias is not present in keystore.")
+                    }
+                    if (!ks.isKeyEntry(ksAliasRaw)) {
+                        throw new GradleException("ERROR: Release build failed in CI. Alias does not reference a valid private key entry.")
+                    }
+                    def key = ks.getKey(ksAliasRaw, ksKeyPassRaw.toCharArray())
+                    if (key == null || !(key instanceof java.security.PrivateKey)) {
+                        throw new GradleException("ERROR: Release build failed in CI. Could not retrieve a valid private key for the specified alias.")
+                    }
+                } catch (GradleException ge) {
+                    throw ge
+                } catch (Exception e) {
+                    throw new GradleException("ERROR: Release build failed in CI. Keystore validation failed. Ensure keystore password, key password, and alias are correct.")
+                }
+
+                signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
+            }
+        }
+    }
+}
+
+flutter {
+    source '../..'
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+}

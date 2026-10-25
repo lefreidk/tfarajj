@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#09090d">
+    <meta name="color-scheme" content="dark light">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>TFARAJ | تفرج</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+    <!-- Splash Screen -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-content">
+            <img src="Logo.png" alt="TFARAJ Logo" class="splash-logo">
+            <div class="splash-loader">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Overlay -->
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-modal">
+            <button class="auth-close" onclick="closeAuthModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="auth-logo">
+                <h1 class="auth-app-title">TFARAJ</h1>
+                <p>مرحباً بك! سجل دخول للمتابعة</p>
+            </div>
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login')">تسجيل الدخول</button>
+                <button class="auth-tab" onclick="switchAuthTab('register')">إنشاء حساب</button>
+            </div>
+            <div class="auth-form active" id="loginForm">
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="loginEmail" placeholder="البريد الإلكتروني">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" placeholder="كلمة المرور">
+                </div>
+                <button class="auth-submit-btn" onclick="emailLogin()">
+                    <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+                </button>
+                <p class="auth-forgot" onclick="resetPassword()">نسيت كلمة المرور؟</p>
+            </div>
+            <div class="auth-form" id="registerForm">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="registerName" placeholder="الاسم الكامل">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="registerEmail" placeholder="البريد الإلكتروني">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="registerPassword" placeholder="كلمة المرور">
+                </div>
+                <button class="auth-submit-btn" onclick="emailRegister()">
+                    <i class="fas fa-user-plus"></i> إنشاء حساب
+                </button>
+            </div>
+            <div class="auth-divider">
+                <span>أو</span>
+            </div>
+            <button class="auth-google-btn" onclick="googleLogin()">
+                <i class="fab fa-google"></i> متابعة باستخدام Google
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <header id="mainHeader">
+        <div class="header-top">
+            <h1 class="app-title">TFARAJ</h1>
+            <p class="app-subtitle">عالمك السينمائي</p>
+        </div>
+        <div class="user-area">
+            <div class="profile-btn" id="profileBtn" style="display: none;" onclick="toggleProfileMenu()">
+                <img id="headerAvatar" src="" alt="صورة المستخدم">
+                <span id="headerUserName">مستخدم</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="profile-dropdown" id="profileDropdown">
+                <div class="profile-header">
+                    <img id="dropdownAvatar" src="" alt="صورة المستخدم">
+                    <div>
+                        <strong id="dropdownName">اسم المستخدم</strong>
+                        <span id="dropdownEmail">email@example.com</span>
+                    </div>
+                </div>
+                <div class="profile-menu-items">
+                    <button onclick="showProfileSettings()">
+                        <i class="fas fa-cog"></i> إعدادات الحساب
+                    </button>
+                    <button onclick="openCoinsModal(); toggleProfileMenu();">
+                        <i class="fas fa-coins"></i> رصيدي: <span id="profileCoins">0</span> 🪙
+                    </button>
+                    <button onclick="switchPage('favorites'); toggleProfileMenu();">
+                        <i class="fas fa-heart"></i> مفضلتي
+                    </button>
+                    <button onclick="googleLogout()" style="color: #e53935 !important;">
+                        <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                    </button>
+                </div>
+            </div>
+            <button class="google-login-btn" id="googleLoginBtn" onclick="openAuthModal()">
+                <i class="fas fa-user-circle"></i>
+                <span>تسجيل الدخول</span>
+            </button>
+        </div>
+        <div class="coins-wallet" id="coinsWallet" onclick="openCoinsModal()">
+            <i class="fas fa-coins"></i>
+            <span id="walletBalance">0</span>
+        </div>
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="searchInput" oninput="handleSearch()" placeholder="ابحث عن فيلم أو مسلسل...">
+            <button class="clear-search" id="clearSearchBtn" onclick="clearSearch()" style="display: none;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Pages -->
+    <main class="page active" id="page-home">
+        <section class="welcome-hero" aria-label="مرحباً بك في تفرج">
+            <div class="hero-orbit hero-orbit-one"></div>
+            <div class="hero-orbit hero-orbit-two"></div>
+            <div class="hero-content">
+                <span class="hero-eyebrow"><i class="fas fa-sparkles"></i> تجربتك السينمائية تبدأ هنا</span>
+                <h2>ليلتك، <span>قصتك.</span></h2>
+                <p>اكتشف عوالم جديدة، واختر حكايتك القادمة من مكتبة تفرج.</p>
+                <a class="hero-cta" href="#topViewsContainer" onclick="document.getElementById('topViewsContainer').scrollIntoView({behavior:'smooth',block:'start'}); return false;">
+                    اكتشف الآن <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+            <div class="hero-art" aria-hidden="true">
+                <div class="hero-art-glow"></div>
+                <div class="hero-film-icon"><i class="fas fa-clapperboard"></i></div>
+                <span class="hero-star hero-star-one">✦</span>
+                <span class="hero-star hero-star-two">✧</span>
+            </div>
+            <div class="hero-bottom-line"></div>
+        </section>
+        <h2 class="page-title">🔥 الأكثر مشاهدة</h2>
+        <div class="grid-container" id="topViewsContainer"></div>
+        <h2 class="page-title page-title-second">🆕 أحدث الإضافات</h2>
+        <div class="grid-container" id="homeContainer"></div>
+    </main>
+
+    <main class="page" id="page-anime">
+        <h2 class="page-title">🎎 الأنمي</h2>
+        <div class="grid-container" id="animeContainer"></div>
+    </main>
+
+    <main class="page" id="page-movies">
+        <h2 class="page-title">🎬 الأفلام السينمائية</h2>
+        <div class="grid-container" id="moviesContainer"></div>
+    </main>
+
+    <main class="page" id="page-series">
+        <h2 class="page-title">📺 المسلسلات التلفزيونية</h2>
+        <div class="grid-container" id="seriesContainer"></div>
+    </main>
+
+    <main class="page" id="page-favorites">
+        <h2 class="page-title">❤️ قائمتي المفضلة</h2>
+        <div class="grid-container" id="favoritesContainer"></div>
+    </main>
+
+    <!-- ==================== صفحة الإشعارات ==================== -->
+    <main class="page" id="page-notifications">
+        <h2 class="page-title">🔔 الإشعارات</h2>
+        <div id="notificationsList">
+            <div class="empty-state">لا توجد إشعارات حالياً</div>
+        </div>
+    </main>
+
+    <main class="page" id="page-settings">
+        <h2 class="page-title">⚙️ الإعدادات</h2>
+        <div class="settings-list">
+            <div class="settings-item">
+                <span>الوضع الداكن</span>
+                <label class="switch">
+                    <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="settings-item">
+                <span>مانع الإعلانات والنوافذ المنبثقة</span>
+                <label class="switch">
+                    <input type="checkbox" id="adBlockToggle" onchange="toggleAdBlock()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="settings-item">
+                <span>لغة التطبيق</span>
+                <select id="langSelect" onchange="changeLanguage()">
+                    <option value="ar">🇸🇦 العربية</option>
+                    <option value="en">🇬🇧 English</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="ja">🇯🇵 日本語</option>
+                </select>
+            </div>
+            <div class="about-card">
+                <h3>حول التطبيق</h3>
+                <p>تطبيق عصري لمشاهدة المحتوى السينمائي بدقة عالية وسرعة فائقة.</p>
+                <p class="credit-label">برمجة وتصميم</p>
+                <p class="credit-name">Lefreid Khalil</p>
+                <div class="social-icons">
+                    <a href="https://facebook.com" target="_blank" aria-label="فيسبوك">
+                        <i class="fab fa-facebook"></i>
+                    </a>
+                    <a href="https://instagram.com" target="_blank" aria-label="انستغرام">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://tiktok.com" target="_blank" aria-label="تيك توك">
+                        <i class="fab fa-tiktok"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Watch Page -->
+    <div class="watch-page" id="watchPage">
+        <div class="backdrop-blur" id="playerBackdrop"></div>
+        <div class="player-wrapper">
+            <button class="back-btn" onclick="closePlayer()">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+            <iframe id="videoPlayer" allowfullscreen allow="autoplay; fullscreen"></iframe>
+        </div>
+        <div class="details-wrapper">
+            <h1 class="movie-meta-title" id="playerTitle">اسم العمل</h1>
+            <div class="movie-meta-flex">
+                <span id="playerYear">0000</span>
+                <span id="playerCategory">تصنيف</span>
+                <span>
+                    <i class="fas fa-star" style="color: #ffc107;"></i>
+                    <b id="playerRating">0.0</b>
+                </span>
+            </div>
+            <p class="movie-meta-desc" id="playerDesc">وصف العمل وقصته تظهر هنا بالتفصيل.</p>
+            <button class="fav-action-btn" id="favActionBtn">
+                <i class="fas fa-bookmark"></i>
+                <span>إضافة إلى المفضلة</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Ad Overlay -->
+    <div class="ad-overlay" id="adOverlay">
+        <div class="ad-popup">
+            <div class="ad-countdown" id="adCountdown">5</div>
+            <img id="adImage" src="" alt="إعلان" class="ad-image">
+            <h3 id="adText">إعلان</h3>
+            <button class="ad-skip-btn" id="adSkipBtn" disabled>
+                <span>تخطي الإعلان</span>
+                <span id="adTimer">(5)</span>
+            </button>
+            <div class="ad-progress-bar">
+                <div class="ad-progress-fill" id="adProgress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coins Modal -->
+    <div class="modal-overlay" id="coinsModal">
+        <div class="modal-content coins-modal-content">
+            <button class="modal-close" onclick="closeCoinsModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2>
+                <i class="fas fa-coins" style="color: #f9a825;"></i>
+                رصيدي
+            </h2>
+            <p class="coins-total">
+                رصيدك الحالي:
+                <span id="modalCoinsBalance">0</span>
+                🪙
+            </p>
+            <h3>🛒 استخدام العملات</h3>
+            <div class="spend-list">
+                <div class="spend-item">
+                    <span>🎞️ فتح محتوى حصري</span>
+                    <button class="spend-btn" onclick="spendCoins(50, 'محتوى حصري')">50 🪙</button>
+                </div>
+                <div class="spend-item">
+                    <span>⭐ جودة 4K</span>
+                    <button class="spend-btn" onclick="spendCoins(30, 'جودة 4K')">30 🪙</button>
+                </div>
+                <div class="spend-item">
+                    <span>🚫 إزالة الإعلانات</span>
+                    <button class="spend-btn" onclick="spendCoins(100, 'إزالة الإعلانات')">100 🪙</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="switchPage('home')">
+            <i class="fas fa-home"></i>
+            <span>الرئيسية</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('anime')">
+            <i class="fas fa-dragon"></i>
+            <span>أنمي</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('movies')">
+            <i class="fas fa-film"></i>
+            <span>أفلام</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('series')">
+            <i class="fas fa-tv"></i>
+            <span>مسلسلات</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('notifications')">
+            <i class="fas fa-bell"></i>
+            <span>الإشعارات</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('favorites')">
+            <i class="fas fa-heart"></i>
+            <span>المفضلة</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('settings')">
+            <i class="fas fa-cog"></i>
+            <span>الإعدادات</span>
+        </button>
+    </nav>
+
+    <!-- Data Files -->
+    <script src="movies.js"></script>
+    <script src="series.js"></script>
+    <script src="anime.js"></script>
+
+    <!-- ==================== الكود البرمجي الرئيسي ==================== -->
+    <script>
+        // ==================== Firebase ====================
+        var firebaseConfig = {
+            apiKey: "AIzaSyCEvcOasOQrXu8AFxQzkCRT4WWXpcQNkLg",
+            authDomain: "tfaraj-app.firebaseapp.com",
+            projectId: "tfaraj-app",
+            storageBucket: "tfaraj-app.firebasestorage.app",
+            messagingSenderId: "204225804392",
+            appId: "1:204225804392:web:56995d6c7b69e3cbd5e3dd",
+            measurementId: "G-QBL660MVBL"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        var auth = firebase.auth();
+        var db = firebase.firestore();
+
+        // ==================== المتغيرات العامة ====================
+        var currentUser = null;
+        var currentOpenItemId = null;
+        var adBlockActive = false;
+        var pendingMovie = null;
+        var currentAdTimer = null;
+        var currentAdDuration = 5;
+        var userCoins = 0;
+        var currentLanguage = 'ar';
+
+        // ==================== مراقبة حالة المستخدم ====================
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                currentUser = user;
+                var loginBtn = document.getElementById('googleLoginBtn');
+                var profileBtn = document.getElementById('profileBtn');
+                var headerAvatar = document.getElementById('headerAvatar');
+                var headerUserName = document.getElementById('headerUserName');
+                var dropdownAvatar = document.getElementById('dropdownAvatar');
+                var dropdownName = document.getElementById('dropdownName');
+                var dropdownEmail = document.getElementById('dropdownEmail');
+                var profileCoins = document.getElementById('profileCoins');
+
+                if (loginBtn) {
+                    loginBtn.style.display = 'none';
+                }
+                if (profileBtn) {
+                    profileBtn.style.display = 'flex';
+                }
+                if (headerAvatar) {
+                    var firstChar = user.displayName ? user.displayName.charAt(0) : 'U';
+                    headerAvatar.src = user.photoURL || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Ccircle fill=%22%23e53935%22 cx=%2220%22 cy=%2220%22 r=%2220%22/%3E%3Ctext fill=%22%23fff%22 x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22 font-size=%2218%22%3E' + firstChar + '%3C/text%3E%3C/svg%3E';
+                }
+                if (headerUserName) {
+                    headerUserName.textContent = user.displayName || 'مستخدم';
+                }
+                if (dropdownAvatar) {
+                    dropdownAvatar.src = user.photoURL || '';
+                }
+                if (dropdownName) {
+                    dropdownName.textContent = user.displayName || 'مستخدم';
+                }
+                if (dropdownEmail) {
+                    dropdownEmail.textContent = user.email || '';
+                }
+                if (profileCoins) {
+                    profileCoins.textContent = userCoins;
+                }
+
+                localStorage.setItem('tfaraj_user', JSON.stringify({
+                    name: user.displayName,
+                    email: user.email,
+                    photo: user.photoURL
+                }));
+
+                // ✅ إصلاح 1: حفظ المستخدم في Firestore ليظهر في admin
+                db.collection('users').doc(user.email).set({
+                    email: user.email,
+                    displayName: user.displayName || 'مستخدم',
+                    photoURL: user.photoURL || '',
+                    lastLogin: new Date().toISOString(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }).then(function() {
+                    console.log('✅ تم حفظ المستخدم في Firestore');
+                }).catch(function(error) {
+                    console.log('❌ خطأ في حفظ المستخدم:', error);
+                });
+
+                loadCoins();
+            } else {
+                currentUser = null;
+                var loginBtn2 = document.getElementById('googleLoginBtn');
+                var profileBtn2 = document.getElementById('profileBtn');
+
+                if (loginBtn2) {
+                    loginBtn2.style.display = 'flex';
+                }
+                if (profileBtn2) {
+                    profileBtn2.style.display = 'none';
+                }
+                localStorage.removeItem('tfaraj_user');
+                loadCoins();
+            }
+        });
+
+        // ==================== دوال المصادقة ====================
+        function openAuthModal() {
+            var overlay = document.getElementById('authOverlay');
+            if (overlay) {
+                overlay.classList.add('active');
+            }
+        }
+
+        function closeAuthModal() {
+            var overlay = document.getElementById('authOverlay');
+            if (overlay) {
+                overlay.classList.remove('active');
+            }
+        }
+
+        function switchAuthTab(tab) {
+            var allTabs = document.querySelectorAll('.auth-tab');
+            var allForms = document.querySelectorAll('.auth-form');
+
+            for (var i = 0; i < allTabs.length; i++) {
+                allTabs[i].classList.remove('active');
+            }
+            for (var j = 0; j < allForms.length; j++) {
+                allForms[j].classList.remove('active');
+            }
+
+            if (tab === 'login') {
+                if (allTabs[0]) {
+                    allTabs[0].classList.add('active');
+                }
+                var loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    loginForm.classList.add('active');
+                }
+            } else {
+                if (allTabs[1]) {
+                    allTabs[1].classList.add('active');
+                }
+                var registerForm = document.getElementById('registerForm');
+                if (registerForm) {
+                    registerForm.classList.add('active');
+                }
+            }
+        }
+
+        function googleLogin() {
+            var provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).then(function() {
+                closeAuthModal();
+            }).catch(function(error) {
+                alert('فشل تسجيل الدخول: ' + error.message);
+            });
+        }
+
+        function emailLogin() {
+            var emailValue = document.getElementById('loginEmail').value;
+            var passwordValue = document.getElementById('loginPassword').value;
+
+            if (!emailValue || !passwordValue) {
+                alert('أدخل البريد الإلكتروني وكلمة المرور');
+                return;
+            }
+
+            auth.signInWithEmailAndPassword(emailValue, passwordValue).then(function() {
+                closeAuthModal();
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+            }).catch(function(error) {
+                alert('خطأ: ' + error.message);
+            });
+        }
+
+        function emailRegister() {
+            var nameValue = document.getElementById('registerName').value;
+            var emailValue = document.getElementById('registerEmail').value;
+            var passwordValue = document.getElementById('registerPassword').value;
+
+            if (!nameValue || !emailValue || !passwordValue) {
+                alert('أكمل جميع الحقول');
+                return;
+            }
+
+            auth.createUserWithEmailAndPassword(emailValue, passwordValue).then(function(result) {
+                return result.user.updateProfile({ displayName: nameValue });
+            }).then(function() {
+                closeAuthModal();
+                document.getElementById('registerName').value = '';
+                document.getElementById('registerEmail').value = '';
+                document.getElementById('registerPassword').value = '';
+            }).catch(function(error) {
+                alert('خطأ: ' + error.message);
+            });
+        }
+
+        function resetPassword() {
+            var emailValue = document.getElementById('loginEmail').value;
+            if (!emailValue) {
+                emailValue = prompt('أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور:');
+            }
+            if (emailValue) {
+                auth.sendPasswordResetEmail(emailValue).then(function() {
+                    alert('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
+                }).catch(function(error) {
+                    alert('خطأ: ' + error.message);
+                });
+            }
+        }
+
+        function googleLogout() {
+            auth.signOut();
+            var dropdown = document.getElementById('profileDropdown');
+            if (dropdown) {
+                dropdown.classList.remove('active');
+            }
+        }
+
+        function toggleProfileMenu() {
+            var dropdown = document.getElementById('profileDropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('active');
+            }
+        }
+
+        function showProfileSettings() {
+            var dropdown = document.getElementById('profileDropdown');
+            if (dropdown) {
+                dropdown.classList.remove('active');
+            }
+            switchPage('settings');
+        }
+
+        // ==================== الترجمة ====================
+        var translations = {
+            ar: {
+                appSubtitle: 'عالمك السينمائي',
+                searchPlaceholder: 'ابحث عن فيلم أو مسلسل...',
+                mostViewed: '🔥 الأكثر مشاهدة',
+                latest: '🆕 أحدث الإضافات',
+                anime: '🎎 الأنمي',
+                movies: '🎬 الأفلام السينمائية',
+                series: '📺 المسلسلات التلفزيونية',
+                favorites: '❤️ قائمتي المفضلة',
+                notifications: '🔔 الإشعارات',
+                settings: '⚙️ الإعدادات',
+                darkMode: 'الوضع الداكن',
+                adBlock: 'مانع الإعلانات والنوافذ المنبثقة',
+                language: 'لغة التطبيق',
+                about: 'حول التطبيق',
+                aboutDesc: 'تطبيق PWA عصري لمشاهدة المحتوى السينمائي بدقة عالية وسرعة فائقة.',
+                credit: 'برمجة وتصميم',
+                myBalance: 'رصيدي',
+                balance: 'رصيدك الحالي',
+                useCoins: '🛒 استخدام العملات',
+                skipAd: 'تخطي الإعلان',
+                continue: 'متابعة للمشاهدة',
+                ad: 'إعلان',
+                noViews: 'لم يتم مشاهدة أي محتوى بعد. شاهد شيئاً ليظهر هنا!',
+                noResults: 'لا توجد نتائج مطابقة لبحثك.',
+                noFavorites: 'لم تقم بإضافة أي محتوى لمفضلتك بعد.',
+                noNotifications: 'لا توجد إشعارات حالياً',
+                addFav: 'إضافة إلى المفضلة',
+                inFav: 'في مفضلتي',
+                navHome: 'الرئيسية',
+                navAnime: 'أنمي',
+                navMovies: 'أفلام',
+                navSeries: 'مسلسلات',
+                navNotifications: 'الإشعارات',
+                navFavorites: 'المفضلة',
+                navSettings: 'الإعدادات',
+                coinsActivated: '🛡️ تم تفعيل مانع الإعلانات! (تم خصم 50 عملة)',
+                coinsFail: '😢 رصيدك غير كافٍ. تحتاج 50 عملة لتفعيل مانع الإعلانات. رصيدك الحالي: ',
+                spendSuccess: '✅ تم استخدام ',
+                spendSuccess2: ' عملة لـ ',
+                spendFail: '😢 رصيدك غير كافٍ. تحتاج ',
+                spendFail2: ' عملة. رصيدك الحالي: '
+            },
+            en: {
+                appSubtitle: 'Your Cinematic World',
+                searchPlaceholder: 'Search movies or series...',
+                mostViewed: '🔥 Most Viewed',
+                latest: '🆕 Latest Additions',
+                anime: '🎎 Anime',
+                movies: '🎬 Movies',
+                series: '📺 TV Series',
+                favorites: '❤️ My Favorites',
+                notifications: '🔔 Notifications',
+                settings: '⚙️ Settings',
+                darkMode: 'Dark Mode',
+                adBlock: 'Ad Blocker & Popups',
+                language: 'App Language',
+                about: 'About',
+                aboutDesc: 'A modern PWA app for watching cinematic content in high quality and fast speed.',
+                credit: 'Developed & Designed by',
+                myBalance: 'My Balance',
+                balance: 'Your Balance',
+                useCoins: '🛒 Use Coins',
+                skipAd: 'Skip Ad',
+                continue: 'Continue Watching',
+                ad: 'Advertisement',
+                noViews: 'No content watched yet. Watch something to show here!',
+                noResults: 'No results found.',
+                noFavorites: 'You haven\'t added any favorites yet.',
+                noNotifications: 'No notifications yet',
+                addFav: 'Add to Favorites',
+                inFav: 'In Favorites',
+                navHome: 'Home',
+                navAnime: 'Anime',
+                navMovies: 'Movies',
+                navSeries: 'Series',
+                navNotifications: 'Notifications',
+                navFavorites: 'Favorites',
+                navSettings: 'Settings',
+                coinsActivated: '🛡️ Ad Blocker activated! (50 coins deducted)',
+                coinsFail: '😢 Not enough coins. You need 50 coins to activate Ad Blocker. Your balance: ',
+                spendSuccess: '✅ Used ',
+                spendSuccess2: ' coins for ',
+                spendFail: '😢 Not enough coins. You need ',
+                spendFail2: ' coins. Your balance: '
+            },
+            fr: {
+                appSubtitle: 'Votre Monde Cinématographique',
+                searchPlaceholder: 'Rechercher films ou séries...',
+                mostViewed: '🔥 Les Plus Vus',
+                latest: '🆕 Nouveautés',
+                anime: '🎎 Animé',
+                movies: '🎬 Films',
+                series: '📺 Séries TV',
+                favorites: '❤️ Mes Favoris',
+                notifications: '🔔 Notifications',
+                settings: '⚙️ Paramètres',
+                darkMode: 'Mode Sombre',
+                adBlock: 'Bloqueur de Publicités',
+                language: 'Langue',
+                about: 'À Propos',
+                aboutDesc: 'Une application PWA moderne pour regarder du contenu cinématographique en haute qualité.',
+                credit: 'Développé par',
+                myBalance: 'Mon Solde',
+                balance: 'Votre Solde',
+                useCoins: '🛒 Utiliser les Pièces',
+                skipAd: 'Passer la Pub',
+                continue: 'Continuer',
+                ad: 'Publicité',
+                noViews: 'Aucun contenu regardé. Regardez quelque chose!',
+                noResults: 'Aucun résultat trouvé.',
+                noFavorites: 'Aucun favori ajouté.',
+                noNotifications: 'Aucune notification',
+                addFav: 'Ajouter aux Favoris',
+                inFav: 'Dans les Favoris',
+                navHome: 'Accueil',
+                navAnime: 'Animé',
+                navMovies: 'Films',
+                navSeries: 'Séries',
+                navNotifications: 'Notifications',
+                navFavorites: 'Favoris',
+                navSettings: 'Paramètres',
+                coinsActivated: '🛡️ Bloqueur activé! (50 pièces déduites)',
+                coinsFail: '😢 Pas assez de pièces. 50 pièces nécessaires. Solde: ',
+                spendSuccess: '✅ ',
+                spendSuccess2: ' pièces utilisées pour ',
+                spendFail: '😢 Pas assez de pièces. ',
+                spendFail2: ' pièces nécessaires. Solde: '
+            },
+            es: {
+                appSubtitle: 'Tu Mundo Cinematográfico',
+                searchPlaceholder: 'Buscar películas o series...',
+                mostViewed: '🔥 Más Vistos',
+                latest: '🆕 Novedades',
+                anime: '🎎 Anime',
+                movies: '🎬 Películas',
+                series: '📺 Series',
+                favorites: '❤️ Mis Favoritos',
+                notifications: '🔔 Notificaciones',
+                settings: '⚙️ Ajustes',
+                darkMode: 'Modo Oscuro',
+                adBlock: 'Bloqueador de Anuncios',
+                language: 'Idioma',
+                about: 'Acerca de',
+                aboutDesc: 'Una app PWA moderna para ver contenido cinematográfico en alta calidad.',
+                credit: 'Desarrollado por',
+                myBalance: 'Mi Saldo',
+                balance: 'Tu Saldo',
+                useCoins: '🛒 Usar Monedas',
+                skipAd: 'Saltar Anuncio',
+                continue: 'Continuar',
+                ad: 'Anuncio',
+                noViews: 'Aún no has visto nada. ¡Mira algo!',
+                noResults: 'Sin resultados.',
+                noFavorites: 'No has añadido favoritos.',
+                noNotifications: 'Sin notificaciones',
+                addFav: 'Añadir a Favoritos',
+                inFav: 'En Favoritos',
+                navHome: 'Inicio',
+                navAnime: 'Anime',
+                navMovies: 'Películas',
+                navSeries: 'Series',
+                navNotifications: 'Notificaciones',
+                navFavorites: 'Favoritos',
+                navSettings: 'Ajustes',
+                coinsActivated: '🛡️ Bloqueador activado! (50 monedas deducidas)',
+                coinsFail: '😢 Monedas insuficientes. Necesitas 50 monedas. Saldo: ',
+                spendSuccess: '✅ Usaste ',
+                spendSuccess2: ' monedas para ',
+                spendFail: '😢 Monedas insuficientes. Necesitas ',
+                spendFail2: ' monedas. Saldo: '
+            },
+            ja: {
+                appSubtitle: 'あなたの映画の世界',
+                searchPlaceholder: '映画やシリーズを検索...',
+                mostViewed: '🔥 人気作品',
+                latest: '🆕 新着',
+                anime: '🎎 アニメ',
+                movies: '🎬 映画',
+                series: '📺 シリーズ',
+                favorites: '❤️ お気に入り',
+                notifications: '🔔 通知',
+                settings: '⚙️ 設定',
+                darkMode: 'ダークモード',
+                adBlock: '広告ブロック',
+                language: '言語',
+                about: 'について',
+                aboutDesc: '高品質で映画コンテンツを視聴するためのモダンなPWAアプリ。',
+                credit: '開発者',
+                myBalance: '残高',
+                balance: 'あなたの残高',
+                useCoins: '🛒 コインを使う',
+                skipAd: '広告をスキップ',
+                continue: '続けて見る',
+                ad: '広告',
+                noViews: 'まだ視聴されていません。',
+                noResults: '結果が見つかりません。',
+                noFavorites: 'お気に入りがありません。',
+                noNotifications: '通知はありません',
+                addFav: 'お気に入りに追加',
+                inFav: 'お気に入り済み',
+                navHome: 'ホーム',
+                navAnime: 'アニメ',
+                navMovies: '映画',
+                navSeries: 'シリーズ',
+                navNotifications: '通知',
+                navFavorites: 'お気に入り',
+                navSettings: '設定',
+                coinsActivated: '🛡️ 広告ブロック有効! (50コイン)',
+                coinsFail: '😢 コイン不足。50コイン必要。残高: ',
+                spendSuccess: '✅ ',
+                spendSuccess2: ' コイン使用: ',
+                spendFail: '😢 コイン不足。',
+                spendFail2: ' コイン必要。残高: '
+            }
+        };
+
+        // ==================== عند تحميل الصفحة ====================
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                var splash = document.getElementById('splashScreen');
+                if (splash) {
+                    splash.classList.add('hidden');
+                }
+                
+                // ✅ إصلاح 2: تحميل الإعدادات المحفوظة
+                loadSavedSettings();
+                
+                loadLanguage();
+                loadCoins();
+                loadFirestoreContent().then(function() {
+                    initApp();
+                }).catch(function(error) {
+                    console.warn('تعذر تحميل المحتوى الإضافي من Firestore:', error);
+                    initApp();
+                });
+                bindAdSkipButton();
+            }, 2000);
+        });
+
+        // ==================== تحميل الإعدادات المحفوظة ====================
+        function loadSavedSettings() {
+            // تحميل حالة الوضع الداكن
+            var savedTheme = localStorage.getItem('tfaraj_theme');
+            var themeToggle = document.getElementById('themeToggle');
+            if (savedTheme === 'light') {
+                if (themeToggle) themeToggle.checked = false;
+                document.documentElement.setAttribute('data-theme', 'light');
+            } else {
+                if (themeToggle) themeToggle.checked = true;
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+            
+            // تحميل حالة مانع الإعلانات
+            var savedAdBlock = localStorage.getItem('tfaraj_adblock');
+            var adBlockToggle = document.getElementById('adBlockToggle');
+            if (savedAdBlock === 'true') {
+                if (adBlockToggle) adBlockToggle.checked = true;
+                adBlockActive = true;
+            } else {
+                if (adBlockToggle) adBlockToggle.checked = false;
+                adBlockActive = false;
+            }
+        }
+
+        // ==================== تحميل اللغة ====================
+        function loadLanguage() {
+            var savedLanguage = localStorage.getItem('tfaraj_lang');
+            if (savedLanguage && translations[savedLanguage]) {
+                currentLanguage = savedLanguage;
+                var langSelect = document.getElementById('langSelect');
+                if (langSelect) {
+                    langSelect.value = savedLanguage;
+                }
+            }
+            applyTranslations();
+        }
+
+        // ==================== تغيير اللغة ====================
+        function changeLanguage() {
+            var langSelect = document.getElementById('langSelect');
+            if (langSelect) {
+                currentLanguage = langSelect.value;
+                localStorage.setItem('tfaraj_lang', currentLanguage);
+                applyTranslations();
+            }
+        }
+
+        // ==================== تطبيق الترجمة ====================
+        function applyTranslations() {
+            var t = translations[currentLanguage];
+            if (!t) {
+                return;
+            }
+
+            var appSubtitle = document.querySelector('.app-subtitle');
+            if (appSubtitle) {
+                appSubtitle.textContent = t.appSubtitle;
+            }
+
+            var searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.placeholder = t.searchPlaceholder;
+            }
+
+            var pageTitles = document.querySelectorAll('.page-title');
+            if (pageTitles[0]) {
+                pageTitles[0].innerHTML = t.mostViewed;
+            }
+            if (pageTitles[1]) {
+                pageTitles[1].innerHTML = t.latest;
+            }
+            if (pageTitles[2]) {
+                pageTitles[2].innerHTML = t.anime;
+            }
+            if (pageTitles[3]) {
+                pageTitles[3].innerHTML = t.movies;
+            }
+            if (pageTitles[4]) {
+                pageTitles[4].innerHTML = t.series;
+            }
+            if (pageTitles[5]) {
+                pageTitles[5].innerHTML = t.favorites;
+            }
+            if (pageTitles[6]) {
+                pageTitles[6].innerHTML = t.notifications;
+            }
+            if (pageTitles[7]) {
+                pageTitles[7].innerHTML = t.settings;
+            }
+
+            var navSpans = document.querySelectorAll('.nav-item span');
+            var navKeys = ['navHome', 'navAnime', 'navMovies', 'navSeries', 'navNotifications', 'navFavorites', 'navSettings'];
+            for (var i = 0; i < navSpans.length; i++) {
+                if (t[navKeys[i]]) {
+                    navSpans[i].textContent = t[navKeys[i]];
+                }
+            }
+
+            var settingsSpans = document.querySelectorAll('.settings-item > span');
+            if (settingsSpans[0]) {
+                settingsSpans[0].textContent = t.darkMode;
+            }
+            if (settingsSpans[1]) {
+                settingsSpans[1].textContent = t.adBlock;
+            }
+            if (settingsSpans[2]) {
+                settingsSpans[2].textContent = t.language;
+            }
+
+            var aboutH3 = document.querySelector('.about-card h3');
+            if (aboutH3) {
+                aboutH3.textContent = t.about;
+            }
+            var aboutP = document.querySelector('.about-card p');
+            if (aboutP) {
+                aboutP.textContent = t.aboutDesc;
+            }
+            var creditLabel = document.querySelector('.credit-label');
+            if (creditLabel) {
+                creditLabel.textContent = t.credit;
+            }
+
+            var coinsH2 = document.querySelector('.coins-modal-content h2');
+            if (coinsH2) {
+                coinsH2.innerHTML = '<i class="fas fa-coins" style="color: #f9a825;"></i> ' + t.myBalance;
+            }
+            var coinsP = document.querySelector('.coins-total');
+            if (coinsP) {
+                coinsP.innerHTML = t.balance + ': <span id="modalCoinsBalance">' + userCoins + '</span> 🪙';
+            }
+            var coinsH3 = document.querySelector('.coins-modal-content h3');
+            if (coinsH3) {
+                coinsH3.textContent = t.useCoins;
+            }
+        }
+
+        // ==================== الحصول على ترجمة ====================
+        function getTranslation(key) {
+            var t = translations[currentLanguage];
+            if (t && t[key]) {
+                return t[key];
+            }
+            return key;
+        }
+
+        // ==================== ربط زر تخطي الإعلان ====================
+        function bindAdSkipButton() {
+            var btn = document.getElementById('adSkipBtn');
+            if (btn) {
+                btn.onclick = function() {
+                    if (currentAdTimer) {
+                        clearInterval(currentAdTimer);
+                        currentAdTimer = null;
+                    }
+                    var overlay = document.getElementById('adOverlay');
+                    if (overlay) {
+                        overlay.classList.remove('active');
+                    }
+                    if (pendingMovie) {
+                        var item = pendingMovie;
+                        pendingMovie = null;
+                        openPlayerDirect(item);
+                    }
+                };
+            }
+        }
+
+        // ==================== التبديل بين الصفحات ====================
+        function switchPage(pageId) {
+            var allPages = document.querySelectorAll('.page');
+            var allNavItems = document.querySelectorAll('.nav-item');
+
+            for (var i = 0; i < allPages.length; i++) {
+                allPages[i].classList.remove('active');
+            }
+
+            for (var j = 0; j < allNavItems.length; j++) {
+                allNavItems[j].classList.remove('active');
+            }
+
+            var pageElement = document.getElementById('page-' + pageId);
+            if (pageElement) {
+                pageElement.classList.add('active');
+            }
+
+            var indexMap = {
+                'home': 0,
+                'anime': 1,
+                'movies': 2,
+                'series': 3,
+                'notifications': 4,
+                'favorites': 5,
+                'settings': 6
+            };
+
+            var navItems = document.querySelectorAll('.nav-item');
+            if (navItems[indexMap[pageId]]) {
+                navItems[indexMap[pageId]].classList.add('active');
+            }
+
+            var header = document.getElementById('mainHeader');
+            if (pageId === 'settings') {
+                if (header) {
+                    header.style.display = 'none';
+                }
+            } else {
+                if (header) {
+                    header.style.display = 'flex';
+                }
+            }
+
+            if (pageId === 'favorites') {
+                loadFavorites();
+            }
+
+            if (pageId === 'notifications') {
+                loadNotifications();
+            }
+
+            if (pageId === 'home') {
+                loadTopViews();
+            }
+
+            var searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+
+            var clearBtn = document.getElementById('clearSearchBtn');
+            if (clearBtn) {
+                clearBtn.style.display = 'none';
+            }
+
+            handleSearch();
+        }
+
+        // ==================== إنشاء بطاقة المحتوى ====================
+        function createCard(item) {
+            var card = document.createElement('div');
+            card.className = 'card';
+            card.onclick = function() {
+                openPlayer(item);
+            };
+
+            var posterUrl = item.poster ? item.poster : 'https://img.omdbapi.com/?i=' + item.id + '&apikey=trilogy';
+
+            card.innerHTML = '' +
+                '<div class="card-img-container">' +
+                    '<span class="card-rating"><i class="fas fa-star"></i> ' + (item.rating || 'N/A') + '</span>' +
+                    '<img src="' + posterUrl + '" alt="' + item.title + '" loading="lazy" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22200%22%3E%3Crect fill=%22%231e1e1e%22 width=%22140%22 height=%22200%22/%3E%3Ctext fill=%22%23fff%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3E📽️%3C/text%3E%3C/svg%3E\'">' +
+                '</div>' +
+                '<div class="card-info">' +
+                    '<p class="card-title">' + item.title + '</p>' +
+                    '<p class="card-meta">' + (item.year || 'غير معروف') + ' • ' + (item.category || 'عام') + '</p>' +
+                '</div>';
+
+            return card;
+        }
+
+        // ==================== تحميل الأكثر مشاهدة ====================
+        function loadTopViews() {
+            var container = document.getElementById('topViewsContainer');
+            if (!container) {
+                return;
+            }
+
+            container.innerHTML = '';
+
+            var views = JSON.parse(localStorage.getItem('tfaraj_movie_views') || '{}');
+            var movies = typeof moviesData !== 'undefined' ? moviesData : [];
+            var series = typeof seriesData !== 'undefined' ? seriesData : [];
+            var anime = typeof animeData !== 'undefined' ? animeData : [];
+            var allContent = movies.concat(series).concat(anime);
+
+            var sorted = allContent.filter(function(item) {
+                return views[item.id] && views[item.id] > 0;
+            }).sort(function(a, b) {
+                return (views[b.id] || 0) - (views[a.id] || 0);
+            }).slice(0, 6);
+
+            if (sorted.length === 0) {
+                container.innerHTML = '<div class="empty-state">' + getTranslation('noViews') + '</div>';
+                return;
+            }
+
+            for (var i = 0; i < sorted.length; i++) {
+                var item = sorted[i];
+                var card = createCard(item);
+                var ratingSpan = card.querySelector('.card-rating');
+                if (ratingSpan) {
+                    ratingSpan.innerHTML = '<i class="fas fa-eye"></i> ' + (views[item.id] || 0);
+                    ratingSpan.style.color = '#4ecdc4';
+                }
+                container.appendChild(card);
+            }
+        }
+
+        // ==================== تحميل الإشعارات ====================
+        function loadNotifications() {
+            var container = document.getElementById('notificationsList');
+            if (!container) {
+                return;
+            }
+
+            container.innerHTML = '<div class="empty-state">جاري تحميل الإشعارات...</div>';
+
+            db.collection('notifications').orderBy('date', 'desc').limit(50).get().then(function(snapshot) {
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="empty-state">' + getTranslation('noNotifications') + '</div>';
+                    return;
+                }
+
+                var html = '';
+                snapshot.forEach(function(doc) {
+                    var notification = doc.data();
+                    var date = notification.date ? new Date(notification.date).toLocaleString('ar-SA') : '';
+                    
+                    html += '<div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px;">';
+                    html += '<h3 style="color: var(--accent); margin-bottom: 6px; font-size: 16px;">' + notification.title + '</h3>';
+                    html += '<p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 6px;">' + notification.body + '</p>';
+                    html += '<span style="color: var(--text-muted); font-size: 12px;">' + date + '</span>';
+                    html += '</div>';
+                });
+
+                container.innerHTML = html;
+            }).catch(function(error) {
+                console.log('خطأ في تحميل الإشعارات:', error);
+                container.innerHTML = '<div class="empty-state">' + getTranslation('noNotifications') + '</div>';
+            });
+        }
+
+        // ==================== دمج المحتوى المضاف من لوحة الإدارة ====================
+        function loadFirestoreContent() {
+            return db.collection('content').get().then(function(snapshot) {
+                snapshot.forEach(function(doc) {
+                    var item = doc.data();
+                    if (!item || !item.id) item = Object.assign({ id: doc.id }, item || {});
+                    var target;
+                    if (item.type === 'movies') target = typeof moviesData !== 'undefined' ? moviesData : null;
+                    else if (item.type === 'series') target = typeof seriesData !== 'undefined' ? seriesData : null;
+                    else if (item.type === 'anime') target = typeof animeData !== 'undefined' ? animeData : null;
+                    else return;
+                    if (!target) return;
+                    var exists = target.some(function(existing) { return String(existing.id) === String(item.id); });
+                    if (!exists) target.push(item);
+                });
+            }).catch(function(error) {
+                console.warn('Firestore content load failed:', error);
+                // لا نمنع عرض المحتوى المحلي إذا تعذر اتصال Firestore.
+            });
+        }
+
+        // ==================== تهيئة التطبيق ====================
+        function initApp() {
+            loadTopViews();
+
+            var containerIds = ['homeContainer', 'animeContainer', 'moviesContainer', 'seriesContainer'];
+            for (var i = 0; i < containerIds.length; i++) {
+                var el = document.getElementById(containerIds[i]);
+                if (el) {
+                    el.innerHTML = '';
+                }
+            }
+
+            var movies = typeof moviesData !== 'undefined' ? moviesData : [];
+            var series = typeof seriesData !== 'undefined' ? seriesData : [];
+            var anime = typeof animeData !== 'undefined' ? animeData : [];
+            var allContent = movies.concat(series).concat(anime);
+
+            allContent.sort(function() {
+                return 0.5 - Math.random();
+            });
+
+            var homeContainer = document.getElementById('homeContainer');
+            if (homeContainer) {
+                for (var j = 0; j < Math.min(allContent.length, 10); j++) {
+                    homeContainer.appendChild(createCard(allContent[j]));
+                }
+            }
+
+            var animeContainer = document.getElementById('animeContainer');
+            if (animeContainer && typeof animeData !== 'undefined') {
+                for (var k = 0; k < animeData.length; k++) {
+                    animeContainer.appendChild(createCard(animeData[k]));
+                }
+            }
+
+            var moviesContainer = document.getElementById('moviesContainer');
+            if (moviesContainer && typeof moviesData !== 'undefined') {
+                for (var m = 0; m < moviesData.length; m++) {
+                    moviesContainer.appendChild(createCard(moviesData[m]));
+                }
+            }
+
+            var seriesContainer = document.getElementById('seriesContainer');
+            if (seriesContainer && typeof seriesData !== 'undefined') {
+                for (var n = 0; n < seriesData.length; n++) {
+                    seriesContainer.appendChild(createCard(seriesData[n]));
+                }
+            }
+        }
+
+        // ==================== البحث الفوري ====================
+        function handleSearch() {
+            var searchInput = document.getElementById('searchInput');
+            if (!searchInput) {
+                return;
+            }
+
+            var query = searchInput.value.toLowerCase().trim();
+
+            var clearBtn = document.getElementById('clearSearchBtn');
+            if (clearBtn) {
+                if (query.length > 0) {
+                    clearBtn.style.display = 'block';
+                } else {
+                    clearBtn.style.display = 'none';
+                }
+            }
+
+            var activePage = document.querySelector('.page.active');
+            if (!activePage) {
+                return;
+            }
+
+            var pageId = activePage.id;
+            var sourceData = [];
+            var container = null;
+
+            var movies = typeof moviesData !== 'undefined' ? moviesData : [];
+            var series = typeof seriesData !== 'undefined' ? seriesData : [];
+            var anime = typeof animeData !== 'undefined' ? animeData : [];
+
+            if (pageId === 'page-home') {
+                sourceData = movies.concat(series).concat(anime);
+                container = document.getElementById('homeContainer');
+            } else if (pageId === 'page-anime') {
+                sourceData = anime;
+                container = document.getElementById('animeContainer');
+            } else if (pageId === 'page-movies') {
+                sourceData = movies;
+                container = document.getElementById('moviesContainer');
+            } else if (pageId === 'page-series') {
+                sourceData = series;
+                container = document.getElementById('seriesContainer');
+            } else if (pageId === 'page-favorites') {
+                loadFavorites(query);
+                return;
+            } else if (pageId === 'page-notifications') {
+                return;
+            } else {
+                return;
+            }
+
+            if (!container) {
+                return;
+            }
+
+            container.innerHTML = '';
+
+            var filtered = sourceData.filter(function(item) {
+                return item.title && item.title.toLowerCase().includes(query);
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">' + getTranslation('noResults') + '</div>';
+                return;
+            }
+
+            for (var i = 0; i < filtered.length; i++) {
+                container.appendChild(createCard(filtered[i]));
+            }
+        }
+
+        // ==================== مسح البحث ====================
+        function clearSearch() {
+            var searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+
+            var clearBtn = document.getElementById('clearSearchBtn');
+            if (clearBtn) {
+                clearBtn.style.display = 'none';
+            }
+
+            handleSearch();
+        }
+
+        // ==================== فتح المشغل ====================
+        function openPlayer(item) {
+            showAdBeforeMovie(item);
+        }
+
+        // ==================== عرض الإعلان قبل الفيلم ====================
+        function showAdBeforeMovie(item) {
+            db.collection('ads').where('active', '==', true).get().then(function(snapshot) {
+                if (snapshot.empty) {
+                    openPlayerDirect(item);
+                    return;
+                }
+
+                var ads = [];
+                snapshot.forEach(function(doc) {
+                    ads.push(doc.data());
+                });
+                var randomAd = ads[Math.floor(Math.random() * ads.length)];
+
+                pendingMovie = item;
+                currentAdDuration = randomAd.duration || 5;
+
+                var adImage = document.getElementById('adImage');
+                var adText = document.getElementById('adText');
+                var adCountdown = document.getElementById('adCountdown');
+                var adProgress = document.getElementById('adProgress');
+                var adSkipBtn = document.getElementById('adSkipBtn');
+                var adOverlay = document.getElementById('adOverlay');
+
+                if (!adOverlay) {
+                    openPlayerDirect(item);
+                    return;
+                }
+
+                if (adImage) {
+                    adImage.src = randomAd.imageUrl;
+                }
+
+                if (adText) {
+                    adText.textContent = randomAd.title || getTranslation('ad');
+                }
+
+                if (adCountdown) {
+                    adCountdown.textContent = currentAdDuration;
+                }
+
+                if (adProgress) {
+                    adProgress.style.width = '0%';
+                }
+
+                if (adSkipBtn) {
+                    adSkipBtn.disabled = true;
+                    adSkipBtn.innerHTML = '<span>' + getTranslation('skipAd') + '</span> <span id="adTimer">(' + currentAdDuration + ')</span>';
+                }
+
+                adOverlay.classList.add('active');
+                bindAdSkipButton();
+
+                var remaining = currentAdDuration;
+                if (currentAdTimer) {
+                    clearInterval(currentAdTimer);
+                }
+
+                currentAdTimer = setInterval(function() {
+                    remaining--;
+
+                    if (remaining > 0) {
+                        if (adCountdown) {
+                            adCountdown.textContent = remaining;
+                        }
+
+                        var timerSpan = document.getElementById('adTimer');
+                        if (timerSpan) {
+                            timerSpan.textContent = '(' + remaining + ')';
+                        }
+
+                        if (adProgress) {
+                            var progressPercent = ((currentAdDuration - remaining) / currentAdDuration * 100) + '%';
+                            adProgress.style.width = progressPercent;
+                        }
+                    }
+
+                    if (remaining <= 0) {
+                        clearInterval(currentAdTimer);
+                        currentAdTimer = null;
+
+                        if (adSkipBtn) {
+                            adSkipBtn.disabled = false;
+                            adSkipBtn.innerHTML = '<span>' + getTranslation('continue') + '</span>';
+                        }
+
+                        if (adCountdown) {
+                            adCountdown.textContent = '✓';
+                        }
+
+                        if (adProgress) {
+                            adProgress.style.width = '100%';
+                        }
+
+                        bindAdSkipButton();
+                    }
+                }, 1000);
+            }).catch(function() {
+                openPlayerDirect(item);
+            });
+        }
+
+        // ==================== فتح المشغل مباشرة ====================
+        function openPlayerDirect(item) {
+            currentOpenItemId = item.id;
+
+            var watchPage = document.getElementById('watchPage');
+            var player = document.getElementById('videoPlayer');
+
+            if (!watchPage || !player) {
+                return;
+            }
+
+            var posterUrl = item.poster ? item.poster : 'https://img.omdbapi.com/?i=' + item.id + '&apikey=trilogy';
+
+            var playerTitle = document.getElementById('playerTitle');
+            var playerYear = document.getElementById('playerYear');
+            var playerCategory = document.getElementById('playerCategory');
+            var playerRating = document.getElementById('playerRating');
+            var playerDesc = document.getElementById('playerDesc');
+            var playerBackdrop = document.getElementById('playerBackdrop');
+
+            if (playerTitle) {
+                playerTitle.innerText = item.title;
+            }
+
+            if (playerYear) {
+                playerYear.innerText = item.year || '2026';
+            }
+
+            if (playerCategory) {
+                playerCategory.innerText = item.category || 'عام';
+            }
+
+            if (playerRating) {
+                playerRating.innerText = item.rating || '8.5';
+            }
+
+            if (playerDesc) {
+                playerDesc.innerText = item.description || 'لم يتم إضافة وصف توضيحي لهذا العمل بعد، مشاهدة ممتعة.';
+            }
+
+            if (playerBackdrop) {
+                playerBackdrop.style.backgroundImage = "url('" + posterUrl + "')";
+            }
+
+            // تجهيز الصلاحيات المناسبة للمشغل مع منع الإعلانات
+if (adBlockActive) {
+    // إزالة sandbox نهائياً ليسمح للمشغل بالعمل
+    player.removeAttribute('sandbox');
+    
+    // حماية بديلة: كشف وإغلاق أي نوافذ منبثقة تظهر فجأة
+    var popupBlocker = setInterval(function() {
+        // البحث عن أي نوافذ منبثقة أو إطارات إعلانية وإغلاقها
+        var allWindows = document.querySelectorAll('iframe, object, embed');
+        for (var i = 0; i < allWindows.length; i++) {
+            if (allWindows[i] !== player && allWindows[i].offsetHeight > 0 && allWindows[i].style.zIndex > 1000) {
+                allWindows[i].remove();
+                console.log('🚫 تم إغلاق نافذة منبثقة');
+            }
+        }
+    }, 500);
+    
+    // إيقاف المراقبة عند إغلاق المشغل
+    var stopBlocker = function() {
+        clearInterval(popupBlocker);
+    };
+    document.getElementById('watchPage').addEventListener('transitionend', stopBlocker);
+} else {
+    player.removeAttribute('sandbox');
+}
+
+            player.src = 'https://streamimdb.ru/embed/tv/' + item.id + '/';
+
+            updateFavButtonUI(item.id);
+
+            var favBtn = document.getElementById('favActionBtn');
+            if (favBtn) {
+                favBtn.onclick = function() {
+                    toggleFavorite(item);
+                };
+            }
+
+            watchPage.classList.add('active');
+            incrementViews(item.id);
+        }
+
+        // ==================== زيادة عداد المشاهدات ====================
+        function incrementViews(movieId) {
+            db.collection('views').doc('movies').set({
+                [movieId]: firebase.firestore.FieldValue.increment(1)
+            }, { merge: true });
+
+            db.collection('views').doc('total').set({
+                count: firebase.firestore.FieldValue.increment(1)
+            }, { merge: true });
+
+            var views = JSON.parse(localStorage.getItem('tfaraj_movie_views') || '{}');
+            views[movieId] = (views[movieId] || 0) + 1;
+            localStorage.setItem('tfaraj_movie_views', JSON.stringify(views));
+        }
+
+        // ==================== إغلاق المشغل ====================
+        function closePlayer() {
+            var player = document.getElementById('videoPlayer');
+            var watchPage = document.getElementById('watchPage');
+
+            if (player) {
+                player.src = '';
+            }
+
+            if (watchPage) {
+                watchPage.classList.remove('active');
+            }
+
+            currentOpenItemId = null;
+        }
+
+        // ==================== تفعيل/إيقاف مانع الإعلانات ====================
+        function toggleAdBlock() {
+            var toggle = document.getElementById('adBlockToggle');
+            if (!toggle) {
+                return;
+            }
+
+            if (toggle.checked) {
+                if (userCoins >= 50) {
+                    userCoins = userCoins - 50;
+                    saveCoins();
+                    adBlockActive = true;
+                    // ✅ حفظ الحالة
+                    localStorage.setItem('tfaraj_adblock', 'true');
+                    alert(getTranslation('coinsActivated'));
+                } else {
+                    toggle.checked = false;
+                    localStorage.setItem('tfaraj_adblock', 'false');
+                    alert(getTranslation('coinsFail') + userCoins);
+                }
+            } else {
+                adBlockActive = false;
+                // ✅ حفظ الحالة
+                localStorage.setItem('tfaraj_adblock', 'false');
+            }
+        }
+
+        // ==================== المفضلة ====================
+        function getFavorites() {
+            try {
+                return JSON.parse(localStorage.getItem('tfaraj_favs')) || [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function toggleFavorite(item) {
+            var favs = getFavorites();
+            var index = -1;
+
+            for (var i = 0; i < favs.length; i++) {
+                if (favs[i].id === item.id) {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index > -1) {
+                favs.splice(index, 1);
+            } else {
+                favs.push(item);
+            }
+
+            localStorage.setItem('tfaraj_favs', JSON.stringify(favs));
+            updateFavButtonUI(item.id);
+        }
+
+        function updateFavButtonUI(id) {
+            var btn = document.getElementById('favActionBtn');
+            if (!btn) {
+                return;
+            }
+
+            var favs = getFavorites();
+            var isFav = false;
+
+            for (var i = 0; i < favs.length; i++) {
+                if (favs[i].id === id) {
+                    isFav = true;
+                    break;
+                }
+            }
+
+            if (isFav) {
+                btn.classList.add('is-fav');
+                btn.innerHTML = '<i class="fas fa-check"></i> <span>' + getTranslation('inFav') + '</span>';
+            } else {
+                btn.classList.remove('is-fav');
+                btn.innerHTML = '<i class="fas fa-bookmark"></i> <span>' + getTranslation('addFav') + '</span>';
+            }
+        }
+
+        function loadFavorites(query) {
+            if (!query) {
+                query = '';
+            }
+
+            var container = document.getElementById('favoritesContainer');
+            if (!container) {
+                return;
+            }
+
+            container.innerHTML = '';
+            var favs = getFavorites();
+
+            if (query !== '') {
+                favs = favs.filter(function(f) {
+                    return f.title && f.title.toLowerCase().includes(query);
+                });
+            }
+
+            if (favs.length === 0) {
+                container.innerHTML = '<div class="empty-state">' + getTranslation('noFavorites') + '</div>';
+                return;
+            }
+
+            for (var i = 0; i < favs.length; i++) {
+                container.appendChild(createCard(favs[i]));
+            }
+        }
+
+        // ==================== الوضع الداكن / الفاتح ====================
+        function toggleTheme() {
+            var toggle = document.getElementById('themeToggle');
+            if (!toggle) {
+                return;
+            }
+
+            if (toggle.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                // ✅ حفظ الحالة
+                localStorage.setItem('tfaraj_theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                // ✅ حفظ الحالة
+                localStorage.setItem('tfaraj_theme', 'light');
+            }
+        }
+
+        // ==================== نظام العملات ====================
+        function loadCoins() {
+            if (currentUser && currentUser.email) {
+                db.collection('users').doc(currentUser.email).get().then(function(doc) {
+                    if (doc.exists) {
+                        userCoins = doc.data().coins || 0;
+                    } else {
+                        userCoins = 0;
+                    }
+                    updateCoinsUI();
+                }).catch(function() {
+                    userCoins = 0;
+                    updateCoinsUI();
+                });
+            } else {
+                var savedCoins = localStorage.getItem('tfaraj_coins');
+                if (savedCoins) {
+                    userCoins = parseInt(savedCoins);
+                } else {
+                    userCoins = 0;
+                }
+                updateCoinsUI();
+            }
+        }
+
+        function saveCoins() {
+            updateCoinsUI();
+        }
+
+        function updateCoinsUI() {
+            var walletBalance = document.getElementById('walletBalance');
+            var modalBalance = document.getElementById('modalCoinsBalance');
+            var profileCoins = document.getElementById('profileCoins');
+
+            if (walletBalance) {
+                walletBalance.textContent = userCoins;
+            }
+
+            if (modalBalance) {
+                modalBalance.textContent = userCoins;
+            }
+
+            if (profileCoins) {
+                profileCoins.textContent = userCoins;
+            }
+        }
+
+        function openCoinsModal() {
+            var modal = document.getElementById('coinsModal');
+            var modalBalance = document.getElementById('modalCoinsBalance');
+
+            if (modal) {
+                modal.classList.add('active');
+            }
+
+            if (modalBalance) {
+                modalBalance.textContent = userCoins;
+            }
+        }
+
+        function closeCoinsModal() {
+            var modal = document.getElementById('coinsModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        function spendCoins(amount, feature) {
+            if (userCoins >= amount) {
+                userCoins = userCoins - amount;
+                saveCoins();
+                alert(getTranslation('spendSuccess') + amount + getTranslation('spendSuccess2') + feature + '!');
+            } else {
+                alert(getTranslation('spendFail') + amount + getTranslation('spendFail2') + userCoins);
+            }
+        }
+
+        // إغلاق القائمة المنسدلة عند النقر خارجها
+        document.addEventListener('click', function(event) {
+            var dropdown = document.getElementById('profileDropdown');
+            var profileBtn = document.getElementById('profileBtn');
+            if (dropdown && profileBtn) {
+                if (!profileBtn.contains(event.target) && !dropdown.contains(event.target)) {
+                    dropdown.classList.remove('active');
+                }
+            }
+        });
+    </script>
+    <script>
+        // نافذة تنبيه داخل التطبيق بدل نافذة المتصفح التي تعرض عنوان الصفحة.
+        (function () {
+            var alertOverlay;
+            function showTfAlert(message) {
+                if (!alertOverlay) {
+                    alertOverlay = document.createElement('div');
+                    alertOverlay.id = 'tfAppAlertOverlay';
+                    alertOverlay.innerHTML = '<div class="tf-app-alert" role="alertdialog" aria-modal="true" aria-labelledby="tfAppAlertTitle"><h3 id="tfAppAlertTitle">تفرج TFARAJ</h3><div class="tf-app-alert-message"></div><button type="button" class="tf-app-alert-ok">حسنًا</button></div>';
+                    document.body.appendChild(alertOverlay);
+                    alertOverlay.querySelector('.tf-app-alert-ok').addEventListener('click', function () {
+                        alertOverlay.classList.remove('is-visible');
+                    });
+                    alertOverlay.addEventListener('click', function (event) {
+                        if (event.target === alertOverlay) alertOverlay.classList.remove('is-visible');
+                    });
+                }
+                alertOverlay.querySelector('.tf-app-alert-message').textContent = String(message);
+                alertOverlay.classList.add('is-visible');
+                alertOverlay.querySelector('.tf-app-alert-ok').focus();
+            }
+            window.alert = showTfAlert;
+        })();
+    </script>
+</body>
+</html>
